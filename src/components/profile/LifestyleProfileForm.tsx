@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { LifestyleProfile } from '../../types';
+import { logger } from '../../utils/logger';
 
 const LifestyleProfileForm: React.FC = () => {
   const [formData, setFormData] = useState<LifestyleProfile>({
@@ -46,7 +47,7 @@ const LifestyleProfileForm: React.FC = () => {
         setIsEditing(true);
       }
     } catch (err: any) {
-      console.log('No existing lifestyle profile found');
+              logger.debug('No existing lifestyle profile found');
       setIsEditing(false);
     }
   };

@@ -1,41 +1,55 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Grid, List } from 'lucide-react';
+import { ArrowLeft, Send, Grid, List, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import { authService } from '../services/authService';
 import { ChatMessage, Product } from '../types';
-import { trackSearch, trackMetaSearch, trackPageView } from '../utils/analytics';
+import { trackSearch, trackMetaSearch } from '../utils/analytics';
 import { activityService } from '../services/activityService';
+import { shouldShowProfilePrompt, getSearchProfilePromptMessage, getProfileCompletion } from '../utils/profileUtils';
+import { logger } from '../utils/logger';
 import LoadingIndicator from './LoadingIndicator';
 import ProductCard from './ProductCard';
 import CompareView from './CompareView';
 import ProductDetailModal from './ProductDetailModal';
+import ProfilePrompt from './ProfilePrompt';
+import SearchSuggestions from './SearchSuggestions';
 import IngredientHighlight from './IngredientHighlight';
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useAppContext();
+  const { state: authState } = useAuth();
   const [inputQuery, setInputQuery] = useState('');
-  const [streamingText, setStreamingText] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState<ChatMessage | null>(null);
   const [keyIngredients, setKeyIngredients] = useState<string[]>([]);
-  const [streamingIntervalRef, setStreamingIntervalRef] = useState<NodeJS.Timeout | null>(null);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState(0);
 
   useEffect(() => {
     if (state.currentQuery && state.messages.length === 0) {
       handleSearch(state.currentQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  // Cleanup streaming interval on unmount
   useEffect(() => {
-    return () => {
-      if (streamingIntervalRef) {
-        clearInterval(streamingIntervalRef);
+    const fetchProfile = async () => {
+      if (authState.isAuthenticated) {
+        try {
+          const response = await authService.getCompleteProfile();
+          if (response.success) {
+            setProfileCompletion(getProfileCompletion(response.data));
+          }
+        } catch (error) {
+          logger.error('Failed to fetch profile:', error);
+        }
       }
     };
-  }, [streamingIntervalRef]);
+
+    fetchProfile();
+  }, [authState.isAuthenticated]);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return;
@@ -50,7 +64,6 @@ const ChatPage: React.FC = () => {
 
     dispatch({ type: 'ADD_MESSAGE', payload: userMessage });
     dispatch({ type: 'SET_LOADING', payload: true });
-    setCurrentMessage(null);
 
     try {
       const response = await apiService.searchProducts({ query });
@@ -76,7 +89,7 @@ const ChatPage: React.FC = () => {
           .filter(Boolean);
         setKeyIngredients(Array.from(new Set(ingredients)));
 
-        // Create AI response message with streaming effect
+        // Create AI response message without streaming
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -85,11 +98,11 @@ const ChatPage: React.FC = () => {
           searchResults: response.data,
         };
 
-        setCurrentMessage(aiMessage);
-        startStreaming(aiMessage.content);
+        dispatch({ type: 'ADD_MESSAGE', payload: aiMessage });
+        setShowAllProducts(false); // Reset to show only first product
       }
     } catch (error) {
-      console.error('Search failed:', error);
+      logger.error('Search failed:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -133,47 +146,9 @@ const ChatPage: React.FC = () => {
 
       return text;
     } catch (error) {
-      console.error('Error generating response text:', error);
+      logger.error('Error generating response text:', error);
       return 'I found some great products for you! Please check the product cards below for detailed information.';
     }
-  };
-
-  const startStreaming = (text: string) => {
-    // Clear any existing streaming interval
-    if (streamingIntervalRef) {
-      clearInterval(streamingIntervalRef);
-      setStreamingIntervalRef(null);
-    }
-    
-    setIsStreaming(true);
-    setStreamingText('');
-    
-    const words = text.split(' ');
-    let currentIndex = 0;
-    
-    const streamInterval = setInterval(() => {
-      if (currentIndex < words.length) {
-        setStreamingText(prev => {
-          const newText = prev + (prev ? ' ' : '') + words[currentIndex];
-          return newText;
-        });
-        currentIndex++;
-      } else {
-        clearInterval(streamInterval);
-        setStreamingIntervalRef(null);
-        setIsStreaming(false);
-        if (currentMessage) {
-          dispatch({ type: 'ADD_MESSAGE', payload: currentMessage });
-          setCurrentMessage(null);
-          // Don't clear streaming text immediately - let it persist
-          setTimeout(() => {
-            setStreamingText('');
-          }, 100);
-        }
-      }
-    }, 80); // Slightly faster streaming
-    
-    setStreamingIntervalRef(streamInterval);
   };
 
   const handleNewQuery = () => {
@@ -194,6 +169,17 @@ const ChatPage: React.FC = () => {
     navigate('/');
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputQuery(suggestion);
+    handleSearch(suggestion);
+  };
+
+  const showProfilePrompt = shouldShowProfilePrompt(authState.user, profileCompletion);
+  const promptMessage = getSearchProfilePromptMessage(authState.user);
+
+  const productsToShow = showAllProducts ? state.currentProducts : state.currentProducts.slice(0, 1);
+  const hasMoreProducts = state.currentProducts.length > 1;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -207,21 +193,21 @@ const ChatPage: React.FC = () => {
           </button>
           <div>
             <h1 className="font-semibold text-gray-900">Skincare Consultation</h1>
-            <p className="text-sm text-gray-500">AI-powered recommendations</p>
+            <p className="text-sm text-gray-500 hidden sm:block">AI-powered recommendations</p>
           </div>
         </div>
         
         {state.currentProducts.length > 0 && (
           <button
             onClick={() => dispatch({ type: 'TOGGLE_COMPARE_MODE' })}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 ${
+            className={`flex items-center space-x-2 px-3 md:px-4 py-2 rounded-full transition-all duration-200 ${
               state.compareMode 
                 ? 'bg-gray-900 text-white' 
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
             {state.compareMode ? <List className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
-            <span className="font-medium">
+            <span className="font-medium hidden sm:inline">
               {state.compareMode ? 'Back to Results' : 'Compare'}
             </span>
           </button>
@@ -231,6 +217,15 @@ const ChatPage: React.FC = () => {
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Show profile prompt when needed - for guest users show during any search activity */}
+          {showProfilePrompt && (state.currentProducts.length > 0 || (!authState.isAuthenticated && state.messages.length > 0)) && (
+            <ProfilePrompt 
+              message={promptMessage}
+              variant="banner"
+              className="mb-6"
+            />
+          )}
+
           {state.messages.map((message) => (
             <div
               key={message.id}
@@ -252,26 +247,22 @@ const ChatPage: React.FC = () => {
             </div>
           ))}
 
-          {/* Streaming Message */}
-          {isStreaming && currentMessage && (
-            <div className="flex justify-start">
-              <div className="max-w-3xl p-4 rounded-2xl bg-white border border-gray-200">
-                <IngredientHighlight 
-                  text={streamingText} 
-                  ingredients={keyIngredients}
-                  className="text-gray-900"
-                />
-                <span className="inline-flex ml-1">
-                  <span className="typing-indicator"></span>
-                  <span className="typing-indicator"></span>
-                  <span className="typing-indicator"></span>
-                </span>
-              </div>
-            </div>
+          {/* Loading Indicator */}
+          {state.isLoading && <LoadingIndicator />}
+
+          {/* Show profile prompt during loading for guest users */}
+          {showProfilePrompt && state.isLoading && !authState.isAuthenticated && (
+            <ProfilePrompt 
+              message="Sign in to get the most accurate personalized recommendations!"
+              variant="inline"
+              className="my-4"
+            />
           )}
 
-          {/* Loading Indicator */}
-          {state.isLoading && !isStreaming && <LoadingIndicator />}
+          {/* Show suggestions when no messages and not loading */}
+          {state.messages.length === 0 && !state.isLoading && (
+            <SearchSuggestions onSuggestionClick={handleSuggestionClick} />
+          )}
 
           {/* Products Section */}
           {state.currentProducts.length > 0 && !state.compareMode && !state.isLoading && (
@@ -286,7 +277,7 @@ const ChatPage: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {state.currentProducts.map((product) => (
+                {productsToShow.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -297,6 +288,37 @@ const ChatPage: React.FC = () => {
                   />
                 ))}
               </div>
+
+              {/* Show More/Less Button */}
+              {hasMoreProducts && (
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowAllProducts(!showAllProducts)}
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                  >
+                    <span className="font-medium text-gray-700">
+                      {showAllProducts 
+                        ? 'Show Less' 
+                        : `See ${state.currentProducts.length - 1} More Recommended Products`
+                      }
+                    </span>
+                    {showAllProducts ? (
+                      <ChevronUp className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Profile prompt after products for better personalization */}
+              {showProfilePrompt && authState.isAuthenticated && (
+                <ProfilePrompt 
+                  message="Get more personalized recommendations by completing your profile!"
+                  variant="card"
+                  className="mt-8"
+                />
+              )}
             </div>
           )}
 
@@ -310,6 +332,15 @@ const ChatPage: React.FC = () => {
       {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
+          {/* Profile prompt when starting to search */}
+          {showProfilePrompt && state.messages.length === 0 && !state.isLoading && (
+            <ProfilePrompt 
+              message={promptMessage}
+              variant="inline"
+              className="mb-4"
+            />
+          )}
+          
           <div className="flex space-x-3">
             <div className="flex-1 relative">
               <textarea

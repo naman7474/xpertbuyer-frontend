@@ -3,6 +3,7 @@ import { Star, ExternalLink } from 'lucide-react';
 import { Product, CompareResponse } from '../types';
 import { apiService } from '../services/api';
 import { trackCompareView } from '../utils/analytics';
+import { logger } from '../utils/logger';
 
 interface CompareViewProps {
   products: Product[];
@@ -20,7 +21,7 @@ const CompareView: React.FC<CompareViewProps> = ({ products }) => {
         const response = await apiService.compareProducts(productIds);
         setComparisonData(response);
       } catch (error) {
-        console.error('Failed to fetch comparison:', error);
+        logger.error('Failed to fetch comparison:', error);
       } finally {
         setLoading(false);
       }

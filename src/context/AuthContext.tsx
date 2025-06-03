@@ -77,11 +77,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Check for existing authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
       const storedUser = authService.getStoredUser();
       
       if (token && storedUser) {
         try {
+          // Ensure both token formats are stored
+          if (!localStorage.getItem('token')) {
+            localStorage.setItem('token', token);
+          }
+          
           // Validate token by fetching current user
           const response = await authService.getCurrentUser();
           if (response.success) {

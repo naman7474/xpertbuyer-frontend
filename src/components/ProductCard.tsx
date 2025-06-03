@@ -3,6 +3,7 @@ import { Star, ExternalLink, PlayCircle, Users } from 'lucide-react';
 import { Product } from '../types';
 import { apiService } from '../services/api';
 import { trackProductClick, trackProductView, trackMetaProductView } from '../utils/analytics';
+import { logger } from '../utils/logger';
 
 interface ProductCardProps {
   product: Product;
@@ -20,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           setCreatorCount(response.data.creatorCount || 0);
         }
       } catch (error) {
-        console.error('Failed to fetch creator count:', error);
+        logger.error('Failed to fetch creator count:', error);
       }
     };
 

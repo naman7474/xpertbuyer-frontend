@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { MakeupProfile } from '../../types';
+import { logger } from '../../utils/logger';
 
 const MakeupProfileForm: React.FC = () => {
   const [formData, setFormData] = useState<MakeupProfile>({
@@ -43,7 +44,7 @@ const MakeupProfileForm: React.FC = () => {
         setIsEditing(true);
       }
     } catch (err: any) {
-      console.log('No existing makeup profile found');
+              logger.debug('No existing makeup profile found');
       setIsEditing(false);
     }
   };

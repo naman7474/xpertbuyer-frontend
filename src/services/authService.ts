@@ -9,11 +9,12 @@ import {
   HairProfile,
   LifestyleProfile,
   HealthProfile,
-  MakeupProfile,
-  ApiError
+  MakeupProfile
 } from '../types';
+import config from '../config';
+import { logger } from '../utils/logger';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 // Create axios instance with interceptors for token management
 const authApi = axios.create({
@@ -26,13 +27,18 @@ const authApi = axios.create({
 // Request interceptor to add auth token
 authApi.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    // Try both token formats for backward compatibility
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      logger.debug('JWT token added to request:', config.url);
+    } else {
+      logger.debug('No token found in localStorage for request:', config.url);
     }
     return config;
   },
   (error) => {
+    logger.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -51,13 +57,19 @@ authApi.interceptors.response.use(
   }
 );
 
+// Export authApi for use in other services
+export { authApi };
+
 export const authService = {
   // Authentication endpoints
   register: async (userData: RegisterRequest): Promise<AuthResponse> => {
     try {
       const response = await authApi.post('/auth/register', userData);
       if (response.data.success) {
+        // Store both formats for compatibility
         localStorage.setItem('auth_token', response.data.data.token);
+        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('refreshToken', response.data.data.refreshToken || '');
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
       }
       return response.data;
@@ -70,7 +82,10 @@ export const authService = {
     try {
       const response = await authApi.post('/auth/login', credentials);
       if (response.data.success) {
+        // Store both formats for compatibility
         localStorage.setItem('auth_token', response.data.data.token);
+        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('refreshToken', response.data.data.refreshToken || '');
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
       }
       return response.data;
@@ -86,6 +101,8 @@ export const authService = {
       // Continue with logout even if API call fails
     } finally {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
     }
   },
@@ -94,7 +111,10 @@ export const authService = {
     try {
       const response = await authApi.post('/auth/refresh-token');
       if (response.data.success) {
+        // Store both formats for compatibility
         localStorage.setItem('auth_token', response.data.data.token);
+        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('refreshToken', response.data.data.refreshToken || '');
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
       }
       return response.data;

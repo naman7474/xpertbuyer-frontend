@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Star, ExternalLink, Play, Shield, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { Product, ProductVideoResponse } from '../types';
 import { apiService } from '../services/api';
+import { logger } from '../utils/logger';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -20,7 +21,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
         const response = await apiService.getProductVideos(product.id);
         setVideos(response);
       } catch (error) {
-        console.error('Failed to fetch videos:', error);
+        logger.error('Failed to fetch videos:', error);
       } finally {
         setVideosLoading(false);
       }

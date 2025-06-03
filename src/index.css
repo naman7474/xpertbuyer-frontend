@@ -25,11 +25,11 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 px-8 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105;
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 md:px-8 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
   }
   
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-gray-900 font-medium py-3 px-8 rounded-full border border-gray-200 transition-all duration-200 shadow-sm hover:shadow-md;
+    @apply bg-white hover:bg-gray-50 text-gray-900 font-medium py-3 px-6 md:px-8 rounded-lg border border-gray-200 transition-all duration-200 shadow-sm hover:shadow-md;
   }
   
   .card {
@@ -37,25 +37,12 @@
   }
   
   .ingredient-tag {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-50 text-primary-700 hover:bg-primary-100 cursor-pointer transition-colors duration-200;
-  }
-  
-  .typing-indicator {
-    @apply animate-pulse bg-gray-400 rounded-full w-1 h-1 mx-0.5 inline-block;
-    animation: typing 1.4s infinite ease-in-out;
-  }
-  
-  .typing-indicator:nth-child(2) {
-    animation-delay: -1.2s;
-  }
-  
-  .typing-indicator:nth-child(3) {
-    animation-delay: -1.0s;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer transition-colors duration-200;
   }
 
   /* Mobile-optimized form elements */
   .form-select {
-    @apply w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent;
+    @apply w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
     @apply bg-white text-base min-h-[48px] cursor-pointer shadow-sm;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
@@ -77,17 +64,17 @@
   }
 
   .form-input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent;
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
     @apply text-base min-h-[48px];
   }
 
   .form-textarea {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent;
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
     @apply text-base min-h-[48px] resize-none;
   }
 
   .form-checkbox {
-    @apply h-5 w-5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded;
+    @apply h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded;
     @apply cursor-pointer min-w-[20px] min-h-[20px];
   }
 
@@ -159,7 +146,7 @@
     .form-select:focus,
     .form-input:focus,
     .form-textarea:focus {
-      @apply ring-2 ring-purple-500 border-purple-500;
+      @apply ring-2 ring-blue-500 border-blue-500;
       outline: none !important;
       -webkit-appearance: none !important;
     }
@@ -180,13 +167,58 @@
       margin: 0 !important;
     }
   }
-}
 
-@keyframes typing {
-  0%, 80%, 100% {
-    transform: scale(0);
+  /* Consistent button styles across the app */
+  .button-small {
+    @apply px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200;
   }
-  40% {
-    transform: scale(1);
+
+  .button-medium {
+    @apply px-4 py-2 text-base font-medium rounded-lg transition-colors duration-200;
+  }
+
+  .button-large {
+    @apply px-6 py-3 text-base font-medium rounded-lg transition-colors duration-200;
+  }
+
+  /* Mobile responsive text sizing */
+  .text-responsive-xs {
+    @apply text-xs md:text-sm;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm md:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base md:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg md:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl md:text-2xl;
+  }
+
+  /* Consistent spacing for mobile */
+  .section-spacing {
+    @apply py-8 md:py-12 lg:py-16;
+  }
+
+  .content-spacing {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+
+  /* Improved touch targets for mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Loading spinner consistent with theme */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-gray-200 border-t-blue-600;
   }
 }

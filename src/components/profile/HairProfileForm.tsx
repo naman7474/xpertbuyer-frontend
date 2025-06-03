@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { HairProfile } from '../../types';
+import { logger } from '../../utils/logger';
 
 const HairProfileForm: React.FC = () => {
   const [formData, setFormData] = useState<HairProfile>({
@@ -44,7 +45,7 @@ const HairProfileForm: React.FC = () => {
         setIsEditing(true);
       }
     } catch (err: any) {
-      console.log('No existing hair profile found');
+              logger.debug('No existing hair profile found');
       setIsEditing(false);
     }
   };

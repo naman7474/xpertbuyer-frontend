@@ -64,7 +64,7 @@ const RegisterPage: React.FC = () => {
     }
     
     // Optional field validations
-    if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
+    if (formData.phone && !/^\+?[\d\s\-()]+$/.test(formData.phone)) {
       errors.phone = 'Please enter a valid phone number';
     }
     

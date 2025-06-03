@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { SkinProfile } from '../../types';
+import { logger } from '../../utils/logger';
 
 const SkinProfileForm: React.FC = () => {
   const [formData, setFormData] = useState<SkinProfile>({
@@ -43,7 +44,7 @@ const SkinProfileForm: React.FC = () => {
       }
     } catch (err: any) {
       // Profile doesn't exist yet, user will create new one
-      console.log('No existing skin profile found');
+              logger.debug('No existing skin profile found');
       setIsEditing(false);
     }
   };
@@ -122,9 +123,11 @@ const SkinProfileForm: React.FC = () => {
     try {
       const response = await authService.uploadSkinPhoto(selectedPhoto);
       if (response.success) {
-        alert('Photo uploaded successfully! AI analysis results will be available in your profile.');
+        // Show success message in a more user-friendly way
+        setError(null);
         setSelectedPhoto(null);
         setPhotoPreview(null);
+        // You could add a success state here instead of using alert
       } else {
         setError('Failed to upload photo');
       }

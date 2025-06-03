@@ -1,6 +1,8 @@
 import axios from 'axios';
+import config from '../config';
+import { logger } from '../utils/logger';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 // Create axios instance for activity tracking
 const activityApi = axios.create({
@@ -81,7 +83,7 @@ export const activityService = {
       const response = await activityApi.post('/activity/track', data);
       return response.data;
     } catch (error: any) {
-      console.error('Activity tracking error:', error);
+      logger.error('Activity tracking error:', error);
       return { success: false, message: 'Failed to track activity' };
     }
   },
@@ -92,7 +94,7 @@ export const activityService = {
       const response = await activityApi.post('/activity/track/product-view', data);
       return response.data;
     } catch (error: any) {
-      console.error('Product view tracking error:', error);
+      logger.error('Product view tracking error:', error);
       return { success: false, message: 'Failed to track product view' };
     }
   },
@@ -103,7 +105,7 @@ export const activityService = {
       const response = await activityApi.post('/activity/track/search', data);
       return response.data;
     } catch (error: any) {
-      console.error('Search tracking error:', error);
+      logger.error('Search tracking error:', error);
       return { success: false, message: 'Failed to track search' };
     }
   },
@@ -114,7 +116,7 @@ export const activityService = {
       const response = await activityApi.post('/activity/track/filter', data);
       return response.data;
     } catch (error: any) {
-      console.error('Filter tracking error:', error);
+      logger.error('Filter tracking error:', error);
       return { success: false, message: 'Failed to track filter' };
     }
   },
@@ -125,7 +127,7 @@ export const activityService = {
       const response = await activityApi.post('/activity/track/recommendation', data);
       return response.data;
     } catch (error: any) {
-      console.error('Recommendation tracking error:', error);
+      logger.error('Recommendation tracking error:', error);
       return { success: false, message: 'Failed to track recommendation' };
     }
   },
@@ -136,7 +138,7 @@ export const activityService = {
       const response = await activityApi.post('/activity/track/wishlist', data);
       return response.data;
     } catch (error: any) {
-      console.error('Wishlist tracking error:', error);
+      logger.error('Wishlist tracking error:', error);
       return { success: false, message: 'Failed to track wishlist action' };
     }
   },
@@ -153,7 +155,7 @@ export const activityService = {
       const response = await activityApi.get('/activity/history', { params });
       return response.data;
     } catch (error: any) {
-      console.error('Activity history fetch error:', error);
+      logger.error('Activity history fetch error:', error);
       return { success: false, message: 'Failed to fetch activity history' };
     }
   },
@@ -165,7 +167,7 @@ export const activityService = {
       const response = await activityApi.get('/activity/analytics', { params });
       return response.data;
     } catch (error: any) {
-      console.error('Activity analytics fetch error:', error);
+      logger.error('Activity analytics fetch error:', error);
       return { success: false, message: 'Failed to fetch activity analytics' };
     }
   },
